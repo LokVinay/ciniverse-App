@@ -1246,90 +1246,94 @@
         });
         
         // Function to initialize all sections on page load
-        const initialize = () => {
-            setupBackgroundCarousel();
-            displayedMediaIds.clear();
-            
-            // All API calls updated to use the new secure format: setupInfiniteScroll(containerId, path, params, isTV)
-            
-            // On Air Movies
-            setupInfiniteScroll('onAirMoviesGrid', 'movie/now_playing', { language: 'en-US' });
-            
-            // On Air Shows
-            setupInfiniteScroll('onAirShowsGrid', 'tv/on_the_air', { language: 'en-US' }, true);
-            
-            // Popular Movies
-            setupInfiniteScroll('popularMoviesGrid', 'movie/popular', { language: 'en-US' });
-            
-            // Popular Series
-            setupInfiniteScroll('popularSeriesGrid', 'tv/popular', { language: 'en-US' }, true);
-            
-            // High Rated Movies
-            setupInfiniteScroll('highRatedMoviesGrid', 'movie/top_rated', { language: 'en-US' });
-            
-            // High Rated Series
-            setupInfiniteScroll('highRatedSeriesGrid', 'tv/top_rated', { language: 'en-US' }, true);
-            
-            // Marvel Movies
-            setupInfiniteScroll('marvelMoviesGrid', 'discover/movie', { with_companies: 420, sort_by: 'popularity.desc' });
-            
-            // Marvel Series
-            setupInfiniteScroll('marvelSeriesGrid', 'discover/tv', { with_companies: 420, sort_by: 'popularity.desc' }, true);
-            
-            // DC Movies
-            setupInfiniteScroll('dcMoviesGrid', 'discover/movie', { with_companies: 429, sort_by: 'popularity.desc' });
-            
-            // DC Series
-            setupInfiniteScroll('dcSeriesGrid', 'discover/tv', { with_companies: 429, sort_by: 'popularity.desc' }, true);
-            
-            // Japanese Movies
-            setupInfiniteScroll('japaneseMoviesGrid', 'discover/movie', { with_original_language: 'ja', sort_by: 'popularity.desc' });
-            
-            // Japanese Series
-            setupInfiniteScroll('japaneseSeriesGrid', 'discover/tv', { with_original_language: 'ja', sort_by: 'popularity.desc' }, true);
-            
-            // Korean Movies
-            setupInfiniteScroll('koreanMoviesGrid', 'discover/movie', { with_original_language: 'ko', sort_by: 'popularity.desc' });
-            
-            // Korean Dramas
-            setupInfiniteScroll('koreanDramasGrid', 'discover/tv', { with_original_language: 'ko', sort_by: 'popularity.desc' }, true);
-            
-            // Kids Movies
-            setupInfiniteScroll('kidsMoviesGrid', 'discover/movie', { with_genres: '10751,16', sort_by: 'popularity.desc' });
-            
-            // Kids Shows
-            setupInfiniteScroll('kidsShowsGrid', 'discover/tv', { with_genres: '10751,16', sort_by: 'popularity.desc' }, true);
-            
-            // Popular Languages: Setting up sections for popular languages
-            setupLanguageSection();
-            
-            // Popular Genres: Setting up sections for popular genres
-            setupGenreSection();
-            
-            // Hindi Movies
-            setupInfiniteScroll('hindiMoviesGrid', 'discover/movie', { with_original_language: 'hi', sort_by: 'popularity.desc' });
-            
-            // Hindi Shows
-            setupInfiniteScroll('hindiShowsGrid', 'discover/tv', { with_original_language: 'hi', sort_by: 'popularity.desc' }, true);
-            
-            // Telugu Movies
-            setupInfiniteScroll('teluguMoviesGrid', 'discover/movie', { with_original_language: 'te', sort_by: 'popularity.desc' });
-            
-            // Telugu Shows
-            setupInfiniteScroll('teluguShowsGrid', 'discover/tv', { with_original_language: 'te', sort_by: 'popularity.desc' }, true);
-            
-            // Tamil Movies
-            setupInfiniteScroll('tamilMoviesGrid', 'discover/movie', { with_original_language: 'ta', sort_by: 'popularity.desc' });
-            
-            // Tamil Shows
-            setupInfiniteScroll('tamilShowsGrid', 'discover/tv', { with_original_language: 'ta', sort_by: 'popularity.desc' }, true);
-            
-            // Malayalam Movies
-            setupInfiniteScroll('malayalamMoviesGrid', 'discover/movie', { with_original_language: 'ml', sort_by: 'popularity.desc' });
-            
-            // Malayalam Shows
-            setupInfiniteScroll('malayalamShowsGrid', 'discover/tv', { with_original_language: 'ml', sort_by: 'popularity.desc' }, true);
-        };
+        // Function to initialize all sections on page load
+const initialize = () => {
+    setupBackgroundCarousel();
+    displayedMediaIds.clear();
+
+    // The first six general sections already contain language: 'en-US'
+    // On Air Movies
+    setupInfiniteScroll('onAirMoviesGrid', 'movie/now_playing', { language: 'en-US' });
+    
+    // On Air Shows
+    setupInfiniteScroll('onAirShowsGrid', 'tv/on_the_air', { language: 'en-US' }, true);
+    
+    // Popular Movies
+    setupInfiniteScroll('popularMoviesGrid', 'movie/popular', { language: 'en-US' });
+    
+    // Popular Series
+    setupInfiniteScroll('popularSeriesGrid', 'tv/popular', { language: 'en-US' }, true);
+    
+    // High Rated Movies
+    setupInfiniteScroll('highRatedMoviesGrid', 'movie/top_rated', { language: 'en-US' });
+    
+    // High Rated Series
+    setupInfiniteScroll('highRatedSeriesGrid', 'tv/top_rated', { language: 'en-US' }, true);
+    
+    // --- CORRECTED SECTIONS (Added language: 'en-US' or ensured all params are set) ---
+    
+    // Marvel Movies
+    setupInfiniteScroll('marvelMoviesGrid', 'discover/movie', { with_companies: 420, sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Marvel Series
+    setupInfiniteScroll('marvelSeriesGrid', 'discover/tv', { with_companies: 420, sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // DC Movies
+    setupInfiniteScroll('dcMoviesGrid', 'discover/movie', { with_companies: 429, sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // DC Series
+    setupInfiniteScroll('dcSeriesGrid', 'discover/tv', { with_companies: 429, sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Japanese Movies
+    setupInfiniteScroll('japaneseMoviesGrid', 'discover/movie', { with_original_language: 'ja', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Japanese Series
+    setupInfiniteScroll('japaneseSeriesGrid', 'discover/tv', { with_original_language: 'ja', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Korean Movies
+    setupInfiniteScroll('koreanMoviesGrid', 'discover/movie', { with_original_language: 'ko', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Korean Dramas
+    setupInfiniteScroll('koreanDramasGrid', 'discover/tv', { with_original_language: 'ko', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Kids Movies
+    setupInfiniteScroll('kidsMoviesGrid', 'discover/movie', { with_genres: '10751,16', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Kids Shows
+    setupInfiniteScroll('kidsShowsGrid', 'discover/tv', { with_genres: '10751,16', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Popular Languages: Setting up sections for popular languages
+    setupLanguageSection();
+    
+    // Popular Genres: Setting up sections for popular genres
+    setupGenreSection();
+    
+    // Indian language sections already had language param, but added 'en-US' for better fallback/poster quality.
+    
+    // Hindi Movies
+    setupInfiniteScroll('hindiMoviesGrid', 'discover/movie', { with_original_language: 'hi', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Hindi Shows
+    setupInfiniteScroll('hindiShowsGrid', 'discover/tv', { with_original_language: 'hi', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Telugu Movies
+    setupInfiniteScroll('teluguMoviesGrid', 'discover/movie', { with_original_language: 'te', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Telugu Shows
+    setupInfiniteScroll('teluguShowsGrid', 'discover/tv', { with_original_language: 'te', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Tamil Movies
+    setupInfiniteScroll('tamilMoviesGrid', 'discover/movie', { with_original_language: 'ta', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Tamil Shows
+    setupInfiniteScroll('tamilShowsGrid', 'discover/tv', { with_original_language: 'ta', sort_by: 'popularity.desc', language: 'en-US' }, true);
+    
+    // Malayalam Movies
+    setupInfiniteScroll('malayalamMoviesGrid', 'discover/movie', { with_original_language: 'ml', sort_by: 'popularity.desc', language: 'en-US' });
+    
+    // Malayalam Shows
+    setupInfiniteScroll('malayalamShowsGrid', 'discover/tv', { with_original_language: 'ml', sort_by: 'popularity.desc', language: 'en-US' }, true);
+};
         
         // Initialize the app when the window loads
         window.onload = initialize;
