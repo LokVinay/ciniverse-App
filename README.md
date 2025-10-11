@@ -71,6 +71,6 @@ The project maintains a flat, efficient structure suitable for small, single-pag
 
 -   **Author Name:** Thiruveedhula Lok Vinay
 -   **GitHub:** https://github.com/LokVinay [LINK]
--   **Portfolio/Website:** https://ciniverse-app.onrender.com/ [LINK]
+-   **Portfolio/Website:** https://lokvinay-portfolio.netlify.app/ [LINK]
 
 ---
