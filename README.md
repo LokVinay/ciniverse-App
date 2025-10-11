@@ -25,7 +25,7 @@ Cineverse is a modern, responsive web application designed for comprehensive mov
     -   **Visual Studio Code:** The code editor used for development.
     -   **Git:** Version control system for tracking changes.
  
-      ##   API Key Source
+### API Key Source
 
 The project uses a single API key from The Movie Database (TMDB) to fetch all its content. For simplicity and ease of use in a static project, the API key is included directly in the `index.html` file.
 
