@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cineverse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #E5E7EB;
+            background-color: #111827;
+        }
+        .background-carousel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .background-carousel img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+        .background-carousel img.active {
+            opacity: 0.15;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        .movie-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            box-sizing: content-box;
+        }
+        .movie-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+        .genre-card {
+            min-width: 100px;
+            display: inline-block;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .genre-card:hover {
+            transform: translateY(-5px);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .movie-row {
+            overflow-x: auto;
+            padding: 0;
+            position: relative;
+            white-space: nowrap;
+            display: flex;
+            gap: 1.5rem;
+        }
+        .movie-row > div {
+            flex-shrink: 0;
+        }
+        .scroll-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 1rem;
+            cursor: pointer;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .movie-section:hover .scroll-arrow {
+            opacity: 1;
+        }
+        .scroll-left {
+            left: 0;
+            border-top-right-radius: 9999px;
+            border-bottom-right-radius: 9999px;
+        }
+        .scroll-right {
+            right: 0;
+            border-top-left-radius: 9999px;
+            border-bottom-left-radius: 9999px;
+        }
+        .modal {
+            display: none;
+        }
+        .modal.open {
+            display: flex;
+        }
+        .rating-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #4B5563;
+            border-radius: 9999px;
+            position: relative;
+            overflow: hidden;
+        }
+        .rating-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #3B82F6;
+            transition: width 0.2s ease-in-out;
+            border-radius: 9999px;
+        }
+        .rating-slider-custom {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+        .rating-slider-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3B82F6;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        .loader {
+            border-top-color: #3498db;
+            border-right-color: #3498db;
+            border-bottom-color: #3498db;
+            animation: spin 1.5s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen">
+    <div id="bgCarousel" class="background-carousel"></div>
+    <div class="content flex-grow flex flex-col pt-0">
+        <div class="flex flex-col sm:flex-row items-center justify-between mb-8 px-4 sm:px-8 pt-4 sm:pt-8">
+            <div class="flex items-center space-x-4 mb-4 sm:mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-10 h-10 text-blue-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                </svg>
+                <h1 class="text-3xl font-extrabold text-white">Cineverse</h1>
+            </div>
+            <button id="recommendationBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-all duration-300 transform hover:scale-105 mt-4 sm:mt-0">
+                Get Recommendation
+            </button>
+        </div>
+        <header class="flex flex-col sm:flex-row items-center justify-between py-4 px-6 bg-gray-900 bg-opacity-80 rounded-full shadow-lg sticky top-0 z-50 transition-all duration-300 mb-8 mx-4 sm:mx-8">
+            <nav class="flex items-center space-x-4 md:space-x-8 text-white text-lg font-medium">
+                <a href="#" id="homeLink" class="hover:text-blue-400 transition-colors">Home</a>
+                <a href="#" id="moviesLink" class="hover:text-blue-400 transition-colors">Movies</a>
+                <a href="#" id="showsLink" class="hover:text-blue-400 transition-colors">Shows</a>
+                <a href="#" id="animationLink" class="hover:text-blue-400 transition-colors">Animation</a>
+                <a href="#" id="kidsLink" class="hover:text-blue-400 transition-colors">Kids</a>
+            </nav>
+            <div class="relative mt-4 sm:mt-0">
+                <input type="text" id="searchInput" placeholder="Search..." class="py-2 px-4 pr-10 rounded-full bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 w-48 md:w-64">
+                <svg id="searchIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:text-white transition-colors">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </header>
+        <main class="flex-grow">
+            <section id="searchResultsSection" class="mb-8 hidden">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Search Results</h2>
+                </div>
+                <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 overflow-y-auto max-h-[70vh] px-4 sm:px-8"></div>
+            </section>
+            <section id="on-air-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">On Air Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="onAirMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('onAirMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('onAirMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="on-air-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">On Air Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="onAirShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('onAirShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('onAirShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="popular-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Popular Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="popularMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('popularMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('popularMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="popular-series" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Popular Series</h2>
+                </div>
+                <div class="relative">
+                    <div id="popularSeriesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('popularSeriesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('popularSeriesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="high-rated-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">High Rated Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="highRatedMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('highRatedMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('highRatedMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="high-rated-series" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">High Rated Series</h2>
+                </div>
+                <div class="relative">
+                    <div id="highRatedSeriesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('highRatedSeriesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('highRatedSeriesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="marvel-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Marvel Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="marvelMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('marvelMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('marvelMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="marvel-series" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Marvel Series</h2>
+                </div>
+                <div class="relative">
+                    <div id="marvelSeriesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('marvelSeriesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('marvelSeriesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="dc-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">DC Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="dcMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('dcMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('dcMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="dc-series" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">DC Series</h2>
+                </div>
+                <div class="relative">
+                    <div id="dcSeriesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('dcSeriesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('dcSeriesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="japanese-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Japanese Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="japaneseMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('japaneseMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('japaneseMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="japanese-series" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Japanese Series</h2>
+                </div>
+                <div class="relative">
+                    <div id="japaneseSeriesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('japaneseSeriesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('japaneseSeriesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="korean-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Korean Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="koreanMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('koreanMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('koreanMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="korean-dramas" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Korean Dramas</h2>
+                </div>
+                <div class="relative">
+                    <div id="koreanDramasGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('koreanDramasGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('koreanDramasGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="kids-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Kids Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="kidsMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('kidsMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('kidsMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="kids-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Kids Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="kidsShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('kidsShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('kidsShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="popular-languages" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Popular Languages</h2>
+                </div>
+                <div class="relative">
+                    <div id="languagesContainer" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('languagesContainer', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('languagesContainer', 300)">❯</button>
+                </div>
+            </section>
+            <section id="popular-genres" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Popular Genres</h2>
+                </div>
+                <div class="relative">
+                    <div id="genresContainer" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('genresContainer', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('genresContainer', 300)">❯</button>
+                </div>
+            </section>
+            <section id="hindi-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Hindi Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="hindiMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('hindiMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('hindiMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="hindi-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Hindi Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="hindiShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('hindiShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('hindiShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="telugu-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Telugu Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="teluguMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('teluguMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('teluguMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="telugu-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Telugu Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="teluguShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('teluguShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('teluguShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="tamil-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Tamil Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="tamilMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('tamilMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('tamilMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="tamil-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Tamil Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="tamilShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('tamilShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('tamilShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="malayalam-movies" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Malayalam Movies</h2>
+                </div>
+                <div class="relative">
+                    <div id="malayalamMoviesGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('malayalamMoviesGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('malayalamMoviesGrid', 300)">❯</button>
+                </div>
+            </section>
+            <section id="malayalam-shows" class="mb-8 movie-section">
+                <div class="px-4 sm:px-8">
+                    <h2 class="text-3xl font-bold text-white mb-6">Malayalam Shows</h2>
+                </div>
+                <div class="relative">
+                    <div id="malayalamShowsGrid" class="movie-row scrollbar-hide px-4 sm:px-8"></div>
+                    <button class="scroll-arrow scroll-left" onclick="scrollContent('malayalamShowsGrid', -300)">❮</button>
+                    <button class="scroll-arrow scroll-right" onclick="scrollContent('malayalamShowsGrid', 300)">❯</button>
+                </div>
+            </section>
+        </main>
+        <div id="loading" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]">
+            <div class="flex flex-col items-center space-y-4">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+                <p class="text-white text-lg font-medium">Loading...</p>
+            </div>
+        </div>
+        <div id="recommendationModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100]">
+            <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-auto relative shadow-lg overflow-y-auto max-h-[90vh]">
+                <button id="closeRecommendationModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <h2 class="text-2xl font-bold text-white mb-6">Custom Recommendation Filters</h2>
+                <div id="recommendationForm" class="flex flex-col space-y-6">
+                    <div class="p-4 bg-gray-700 rounded-lg">
+                        <h3 class="text-xl font-semibold text-white mb-3">Content Type & Sort By</h3>
+                        <div id="contentTypeCheckboxes" class="flex flex-wrap gap-4 text-sm text-gray-200 mb-4">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="contentType" value="movie" checked class="rounded text-blue-600 focus:ring-blue-500"><span>Movies</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="contentType" value="tv" class="rounded text-blue-600 focus:ring-blue-500"><span>Shows</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="contentType" value="animation" class="rounded text-blue-600 focus:ring-blue-500"><span>Animation</span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="contentType" value="kids" class="rounded text-blue-600 focus:ring-2 focus:ring-blue-500"><span>Kids</span></label>
+                        </div>
+                        <div class="flex flex-col space-y-2 mt-4">
+                            <label for="sortBy" class="text-white">Sort By:</label>
+                            <select id="sortBy" class="py-2 px-4 rounded-full bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="popularity.desc">Popularity</option>
+                                <option value="vote_average.desc">Rating</option>
+                                <option value="primary_release_date.desc">Release Date</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="flex flex-col space-y-4 p-4 bg-gray-700 rounded-lg">
+                            <h3 class="text-xl font-semibold text-white">Advanced Filters</h3>
+                            <div class="flex flex-col space-y-2">
+                                <label for="releaseYear" class="text-white">Release Year:</label>
+                                <input type="number" id="releaseYear" placeholder="e.g., 2023" class="py-2 px-4 rounded-full bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <label for="minRuntime" class="text-white">Min. Runtime (minutes):</label>
+                                <input type="number" id="minRuntime" placeholder="e.g., 90" min="0" class="py-2 px-4 rounded-full bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex flex-col space-y-4">
+                                <h3 class="text-base font-semibold text-white">Minimum Rating: <span id="ratingValue" class="font-normal text-blue-400">0</span></h3>
+                                <div class="relative">
+                                    <div class="rating-bar-container"><div id="ratingFill" class="rating-bar"></div></div>
+                                    <input type="range" id="ratingSlider" min="0" max="10" step="0.5" value="0" class="rating-slider-custom">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-4 p-4 bg-gray-700 rounded-lg">
+                            <h3 class="text-xl font-semibold text-white">Studios</h3>
+                            <div id="studioCheckboxes" class="flex flex-wrap gap-4 text-sm text-gray-200">
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="25" class="rounded text-blue-600 focus:ring-blue-500"><span>20th Century Fox</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="6761" class="rounded text-blue-600 focus:ring-blue-500"><span>Amazon Studios</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="41" class="rounded text-blue-600 focus:ring-blue-500"><span>Apple TV+</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="429" class="rounded text-blue-600 focus:ring-blue-500"><span>DC Entertainment</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="2" class="rounded text-blue-600 focus:ring-blue-500"><span>Disney</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="520" class="rounded text-blue-600 focus:ring-blue-500"><span>DreamWorks</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="49" class="rounded text-blue-600 focus:ring-blue-500"><span>HBO</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="420" class="rounded text-blue-600 focus:ring-blue-500"><span>Marvel Studios</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="1382" class="rounded text-blue-600 focus:ring-blue-500"><span>Netflix</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="4" class="rounded text-blue-600 focus:ring-blue-500"><span>Paramount Pictures</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="3" class="rounded text-blue-600 focus:ring-blue-500"><span>Pixar</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="34" class="rounded text-blue-600 focus:ring-blue-500"><span>Sony Pictures</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="33" class="rounded text-blue-600 focus:ring-blue-500"><span>Universal Pictures</span></label>
+                                <label class="flex items-center space-x-2"><input type="checkbox" name="studio" value="174" class="rounded text-blue-600 focus:ring-blue-500"><span>Warner Bros.</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="flex flex-col space-y-4 p-4 bg-gray-700 rounded-lg">
+                            <h3 class="text-xl font-semibold text-white mb-3">Genres</h3>
+                            <div id="genreCheckboxes" class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-200"></div>
+                        </div>
+                        <div class="flex flex-col space-y-4 p-4 bg-gray-700 rounded-lg">
+                            <h3 class="text-xl font-semibold text-white mb-3">Languages</h3>
+                            <div id="languageCheckboxes" class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-200"></div>
+                        </div>
+                    </div>
+                    <button id="generateRecommendationBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition-all duration-300 transform hover:scale-105">
+                        Find Recommendations
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="movieModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[100] overflow-y-auto p-4">
+            <div class="bg-gray-800 rounded-lg p-6 max-w-4xl w-full relative shadow-lg mt-10 mb-10">
+                <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-xl font-bold">
+                    X
+                </button>
+                <div id="modalContent" class="text-white"></div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        // TMDB API credentials and base URLs
+        const API_KEYS = {
+            TMDB: "" // API key removed from client-side code
+        };
+        const PROXY_BASE_URL = "/api"; // New proxy base URL
+        const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+        const TMDB_BACKDROP_URL = "https://image.tmdb.org/t/p/w1280";
+        
+        // Language and genre data for the recommendation modal
+        const languageMap = {
+            "en": "English", "hi": "Hindi", "te": "Telugu", "ta": "Tamil", "ml": "Malayalam", "kn": "Kannada", "ja": "Japanese", "ko": "Korean", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian"
+        };
+        const languages = [
+            { name: "Hindi", code: "hi", poster: "https://image.tmdb.org/t/p/w500/66A9MqXOyVFCssoloscw79z8Tew.jpg" },
+            { name: "English", code: "en", poster: "https://imgs.search.brave.com/0JDDNJP9E2TL8PtYXvYjUWnw9u4hfhTKmDvjbcCuvSM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2Y4Lzk3/L2EwL2Y4OTdhMDU4/MDlhMGIxNTIyOWMz/Zjc4ZjBiZjlmYTIy/LmpwZw" },
+            { name: "Telugu", code: "te", poster: "https://imgs.search.brave.com/FtHMHD_NLUoqc7zUvTo5m0LXzAJOL44OWVqPHuqgQw4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk1qSXdNakl3/TkRNMU9WNUJNbDVC/YW5CblhrRnRaVGd3/T1RrMU56WTFOVEVA/LmpwZw" },
+            { name: "Tamil", code: "ta", poster: "https://imgs.search.brave.com/ZPQ6C4EiSb29S3chzCw1um96jPDaYPziG7DKXh1005k/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS50aGVtb3ZpZWRi/Lm9yZy90L3AvdzIy/MF9hbmRfaDMzMF9m/YWNlLzc3NFVWMWFD/VVJiNHM0SmZFRmcz/SUVNdTVaai5qcGc" },
+            { name: "Malayalam", code: "ml", poster: "https://imgs.search.brave.com/Yq6Vjt1NPjoYCkommjLq2whCVZja9Fs4bguLwlC53ZA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS50aGVtb3ZpZWRi/Lm9yZy90L3AvdzIy/MF9hbmRfaDMzMF9m/YWNlL21XUDVJRmlv/NDdKd1BENmhFeFd3/SzlFY1JFZC5qcGc" },
+            { name: "Kannada", code: "kn", poster: "https://image.tmdb.org/t/p/w500/ehQPboTPaIMkMUOoNOh8e7pZ5Rp.jpg" },
+            { name: "Japanese", code: "ja", poster: "https://image.tmdb.org/t/p/w500/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg" },
+            { name: "Korean", code: "ko", poster: "https://image.tmdb.org/t/p/w500/zp5NrmYp80axIGiEiYPmm1CW6uH.jpg" },
+        ];
+        const genresWithPosters = [
+            { name: "Action", id: 28, poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" },
+            { name: "Adventure", id: 12, poster: "https://image.tmdb.org/t/p/w500/4kh9dxAiClS2GMUpkRyzGwpNWWX.jpg" },
+            { name: "Comedy", id: 35, poster: "https://image.tmdb.org/t/p/w500/tCBxnZwLiY1BOKw3tH6AxHZdqPh.jpg" },
+            { name: "Crime", id: 80, poster: "https://image.tmdb.org/t/p/w500/6V5JSoBb9XNlA1Qvj8yQyXvRrAY.jpg" },
+            { name: "Documentary", id: 99, poster: "https://m.media-amazon.com/images/M/MV5BMTM1NDc5MDYxMl5BMl5BanBnXkFtZTcwMjMzNDAzMQ@@._V1_QL75_UX1230_.jpg" },
+            { name: "Drama", id: 18, poster: "https://imgs.search.brave.com/gkimJ5OrQqbAd50LXg92nfdcmeuOHv_Kgrx_q8yCvhs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9wcmV2/aWV3LnJlZGQuaXQv/Y2RyYW1hLW1vdmll/LXBvc3RlcnMtdGhl/LWdvb2QtdGhlLWNs/aWNoJUMzJUE5cy1h/bmQtdGhlLWNvcHlj/YXRzLXYwLW42aDI5/czdmNmJwZDEuanBl/Zz93aWR0aD02NDAm/Zm9ybWF0PXBqcGcm/YXV0bz13ZWJwJnM9/MTdiZTRiMWYzZWY2/MmRmMGQ2YmFhY2Q0/ODQwZTYzNGI1OWMw/NTViOQ" },
+            { name: "Family", id: 10751, poster: "https://image.tmdb.org/t/p/w500/jLLtx3nTRSLGPAKl4RoIv1FbEBr.jpg" },
+            { name: "Fantasy", id: 14, poster: "https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg" },
+            { name: "Historical", id: 36, poster: "https://imgs.search.brave.com/gfzGGtTKBvENoPOlpmpcKU6kaxxUhxl-f0fAY8uzThc/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzFjSW8ra3VpcUwu/anBn" },
+            { name: "Horror", id: 27, poster: "https://imgc.allpostersimages.com/img/posters/trends-international-it-chapter-2-balloons_u-l-q1rg1360.jpg?artHeight=550&artPerspective=y&artWidth=550&background=ffffff" },
+            { name: "Kids", id: 10762, poster: "https://imgc.allpostersimages.com/img/posters/disney-pixar-cars-one-sheet_u-l-fagzpp0.jpg?artHeight=550&artPerspective=y&artWidth=550&background=ffffff" },
+            { name: "Romance", id: 10749, poster: "https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg" },
+            { name: "Sci-Fi", id: 878, poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+            { name: "Thriller", id: 53, poster: "https://image.tmdb.org/t/p/w500/2ZOzyhoW08neG27DVySMCcq2emd.jpg" },
+            { name: "Biopic", id: 9648, poster: "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" },
+            { name: "Anime", id: 16, poster: "https://imgs.search.brave.com/BpOu8b2mI95swzuoQk3dmDLY4uQlQrCjlh0CznZ2RNA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/ODFvMzBTKzliT0wu/anBn" }
+        ];
+
+        // DOM element references
+        const searchInput = document.getElementById('searchInput');
+        const recommendationBtn = document.getElementById('recommendationBtn');
+        const animationLink = document.getElementById('animationLink');
+        const loadingIndicator = document.getElementById('loading');
+        const movieModal = document.getElementById('movieModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModalBtn = document.getElementById('closeModal');
+        const recommendationModal = document.getElementById('recommendationModal');
+        const closeRecommendationModalBtn = document.getElementById('closeRecommendationModal');
+        const generateRecommendationBtn = document.getElementById('generateRecommendationBtn');
+        const bgCarousel = document.getElementById('bgCarousel');
+        const searchResultsSection = document.getElementById('searchResultsSection');
+        const searchResultsGrid = document.getElementById('searchResultsGrid');
+        const homePageSections = document.querySelectorAll('main > section:not(#searchResultsSection)');
+        const homeLink = document.getElementById('homeLink');
+        const moviesLink = document.getElementById('moviesLink');
+        const showsLink = document.getElementById('showsLink');
+        const kidsLink = document.getElementById('kidsLink');
+        const ratingSlider = document.getElementById('ratingSlider');
+        const ratingValue = document.getElementById('ratingValue');
+        const ratingFill = document.getElementById('ratingFill');
+        const contentTypeCheckboxes = document.getElementById('contentTypeCheckboxes');
+        const genreCheckboxes = document.getElementById('genreCheckboxes');
+        const languageCheckboxes = document.getElementById('languageCheckboxes');
+        const studioCheckboxes = document.getElementById('studioCheckboxes');
+        const releaseYearInput = document.getElementById('releaseYear');
+        const minRuntimeInput = document.getElementById('minRuntime');
+        const sortBySelect = document.getElementById('sortBy');
+
+        // Helper functions to manage UI state
+        const showLoading = () => loadingIndicator.classList.remove('hidden');
+        const hideLoading = () => loadingIndicator.classList.add('hidden');
+        const showModal = (modalEl) => modalEl.classList.remove('hidden');
+        const hideModal = (modalEl) => modalEl.classList.add('hidden');
+
+        // Sets up the background image carousel
+        const setupBackgroundCarousel = async () => {
+            // Updated to use the new fetchData format
+            const data = await fetchData('movie/popular', { language: 'en-US', include_adult: 'false' });
+            if (!data) return;
+            const backdrops = data.results.slice(0, 5).map(movie => `${TMDB_BACKDROP_URL}${movie.backdrop_path}`).filter(url => url.endsWith('.jpg'));
+            let currentImageIndex = 0;
+            const updateBackground = () => {
+                const img = document.createElement('img');
+                img.src = backdrops[currentImageIndex];
+                img.onerror = () => {
+                    console.error("Failed to load background image, using a placeholder.");
+                    img.src = 'https://placehold.co/1280x720/111827/E5E7EB?text=Background+Image+Error';
+                };
+                bgCarousel.innerHTML = '';
+                bgCarousel.appendChild(img);
+                setTimeout(() => img.classList.add('active'), 50);
+                currentImageIndex = (currentImageIndex + 1) % backdrops.length;
+            };
+            updateBackground();
+            setInterval(updateBackground, 10000);
+        };
+
+        // Scrolls content container horizontally
+        window.scrollContent = (containerId, amount) => {
+            const container = document.getElementById(containerId);
+            container.scrollBy({ left: amount, behavior: 'smooth' });
+        };
+
+        // NEW GENERIC FUNCTION to fetch data from the PROXY endpoint
+        const fetchData = async (path, params = {}) => {
+            try {
+                // Construct URL using proxy base and parameters
+                // The proxy server adds the TMDB_API_KEY securely
+                const urlParams = new URLSearchParams(params).toString();
+                const fullUrl = `${PROXY_BASE_URL}/${path}?${urlParams}`;
+
+                const response = await fetch(fullUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error("API Fetch Error:", error);
+                return null;
+            }
+        };
+        
+        // Filter function to remove specific content
+        const filterMedia = (media, mediaType) => {
+            // General adult content filter
+            if (media.adult) {
+                return false;
+            }
+            // Specific filter for Hindi TV shows
+            if (mediaType === 'tv' && media.original_language === 'hi') {
+                const title = (media.name || '').toLowerCase();
+                const overview = (media.overview || '').toLowerCase();
+                const adultKeywords = ['ullu', 'sony liv', 'erotic', 'adult', 'sex', 'crime drama', 'sizzling'];
+                if (adultKeywords.some(keyword => title.includes(keyword) || overview.includes(keyword))) {
+                    return false;
+                }
+            }
+            // Removed the overly broad Korean drama filter
+            return true;
+        };
+
+        const displayedMediaIds = new Set();
+        // Creates a card for a movie or show and appends it to a container
+        const addMediaCard = (media, container, isTV) => {
+            // Ensure media has a poster and is not adult content
+            if (!media.poster_path || !filterMedia(media, isTV ? 'tv' : 'movie')) {
+                return;
+            }
+            if (displayedMediaIds.has(media.id)) return;
+            
+            const posterUrl = `${TMDB_IMAGE_BASE_URL}${media.poster_path}`;
+            const card = document.createElement('div');
+            card.className = 'movie-card rounded-lg overflow-hidden shadow-lg w-40 sm:w-48 flex-shrink-0';
+            const title = media.title || media.name;
+            
+            card.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-60 sm:h-72 object-cover rounded-lg">`;
+            card.addEventListener('click', () => showMovieDetails(media.id, isTV));
+            container.appendChild(card);
+            displayedMediaIds.add(media.id);
+        };
+        
+        // Sets up infinite horizontal scrolling for movie/show sections
+        // Updated to use the new fetchData format
+        const setupInfiniteScroll = (containerId, path, params = {}, isTV = false) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            let page = 1;
+            let isLoading = false;
+            let hasMore = true;
+            const sentinel = document.createElement('div');
+            sentinel.className = 'w-1 h-1 flex-shrink-0';
+            let observer;
+
+            const fetchAndDisplay = async () => {
+                if (isLoading || !hasMore) return;
+                isLoading = true;
+                
+                // Use the new fetchData format: fetchData(path, params)
+                const data = await fetchData(path, { ...params, page: page, include_adult: 'false' });
+
+                if (data && data.results && data.results.length > 0) {
+                    const placeholder = container.querySelector('.loading-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                    const filteredResults = data.results.filter(media => filterMedia(media, isTV ? 'tv' : 'movie'));
+                    filteredResults.forEach(media => {
+                        addMediaCard(media, container, isTV);
+                    });
+                    page++;
+                } else {
+                    hasMore = false;
+                    if (observer) observer.disconnect();
+                }
+                isLoading = false;
+            };
+
+            container.appendChild(sentinel);
+            observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    fetchAndDisplay();
+                }
+            }, { root: container, rootMargin: '0px 300px 0px 0px', threshold: 0 });
+            observer.observe(sentinel);
+            fetchAndDisplay(); // Initial fetch
+        };
+
+        // Sets up infinite vertical scrolling for search results
+        // Updated to use the new fetchData format
+        const setupVerticalInfiniteScroll = (containerId, path, params = {}, isTV = false) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            let page = 1;
+            let isLoading = false;
+            let hasMore = true;
+            const sentinel = document.createElement('div');
+            sentinel.className = 'w-full h-1';
+            let observer;
+            
+            const fetchAndDisplay = async () => {
+                if (isLoading || !hasMore) return;
+                isLoading = true;
+                
+                // Use the new fetchData format: fetchData(path, params)
+                const data = await fetchData(path, { ...params, page: page, include_adult: 'false' });
+                
+                if (data && data.results && data.results.length > 0) {
+                    const filteredResults = data.results.filter(media => filterMedia(media, isTV ? 'tv' : 'movie'));
+                    filteredResults.forEach(media => {
+                        addMediaCard(media, container, isTV || media.media_type === 'tv');
+                    });
+                    page++;
+                } else {
+                    hasMore = false;
+                    if (observer) observer.disconnect();
+                }
+                isLoading = false;
+            };
+            
+            container.appendChild(sentinel);
+            observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    fetchAndDisplay();
+                }
+            });
+            observer.observe(sentinel);
+            fetchAndDisplay(); // Initial fetch
+        };
+
+        // Hides all main content sections
+        const hideAllSections = () => {
+            const allSections = document.querySelectorAll('main > section');
+            allSections.forEach(section => section.classList.add('hidden'));
+        };
+
+        // Displays the main home page content
+        const showHomePage = () => {
+            hideAllSections();
+            const homePageSections = document.querySelectorAll('main > section:not(#searchResultsSection)');
+            homePageSections.forEach(section => section.classList.remove('hidden'));
+            searchInput.value = ''; // Clear search input
+            searchResultsGrid.innerHTML = '';
+            displayedMediaIds.clear();
+            initialize();
+        };
+
+        // Displays the detailed modal for a movie or show
+        const showMovieDetails = async (id, isTV) => {
+            showLoading();
+            const mediaType = isTV ? 'tv' : 'movie';
+            
+            // Updated all 5 API calls to use the new secure fetchData format
+            const [tmdbDetails, credits, videos, images, externalIds] = await Promise.all([
+                fetchData(`${mediaType}/${id}`, { include_adult: 'false' }),
+                fetchData(`${mediaType}/${id}/credits`, { include_adult: 'false' }),
+                fetchData(`${mediaType}/${id}/videos`, { include_adult: 'false' }),
+                fetchData(`${mediaType}/${id}/images`, { include_adult: 'false' }),
+                fetchData(`${mediaType}/${id}/external_ids`, { include_adult: 'false' })
+            ]);
+            
+            // Updated collection details call
+            const collectionDetails = tmdbDetails?.belongs_to_collection ? await fetchData(`collection/${tmdbDetails.belongs_to_collection.id}`) : null;
+            
+            hideLoading();
+            if (!tmdbDetails) {
+                modalContent.innerHTML = `<p class="text-center text-red-500">Failed to load movie details. Please try again later.</p>`;
+                showModal(movieModal);
+                return;
+            }
+            const title = tmdbDetails.title || tmdbDetails.name;
+            const imdbRating = tmdbDetails.vote_average ? tmdbDetails.vote_average.toFixed(1) : 'N/A';
+            const originalLanguage = languageMap[tmdbDetails.original_language] || 'N/A';
+            const genresNames = tmdbDetails.genres?.map(g => g.name).join(', ') || 'N/A';
+            const plot = tmdbDetails.overview || 'N/A';
+            const runtime = tmdbDetails.runtime ? `${tmdbDetails.runtime} min` : 'N/A';
+            const awards = 'N/A';
+            const getDirector = (crew) => crew.find(member => member.job === 'Director')?.name || 'N/A';
+            const castList = credits?.cast.slice(0, 8).map(c => `
+                <div class="flex flex-col items-center text-center">
+                    <a href="https://www.themoviedb.org/person/${c.id}" target="_blank">
+                        <img src="${c.profile_path ? `https://image.tmdb.org/t/p/w200${c.profile_path}` : 'https://placehold.co/100x150?text=No+Photo'}" alt="${c.name}" class="w-20 h-20 rounded-full object-cover mb-2">
+                        <span class="text-sm font-semibold">${c.name}</span>
+                        <span class="text-xs text-gray-400 block">${c.character}</span>
+                    </a>
+                </div>
+            `).join('');
+            const videosList = videos?.results?.filter(v => v.site === 'YouTube' && !v.name.toLowerCase().includes('stand-up') && !v.name.toLowerCase().includes('youtube')).slice(0, 5).map(video => `
+                <div class="w-[320px] h-48 md:w-[480px] md:h-72 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
+                    <iframe class="w-full h-full" src="https://www.youtube.com/embed/${video.key}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            `).join('');
+            const photosList = images?.backdrops?.slice(0, 10).map(photo => `
+                <div class="w-96 h-56 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="${TMDB_BACKDROP_URL}${photo.file_path}" alt="Movie Image" class="w-full h-full object-cover">
+                </div>
+            `).join('');
+            const imdbLink = externalIds?.imdb_id ? `<a href="https://www.imdb.com/title/${externalIds.imdb_id}" target="_blank" class="text-blue-400 hover:underline">View on IMDb</a>` : '';
+            const externalLinksHtml = imdbLink;
+            const collectionMovies = collectionDetails?.parts?.filter(part => part.id !== tmdbDetails.id) || [];
+            const collectionHtml = collectionMovies.length > 0 ? `
+                <div class="mt-8">
+                    <h3 class="text-2xl font-bold text-white mb-4">More from the ${collectionDetails.name}</h3>
+                    <div class="relative">
+                        <div id="collectionGrid" class="movie-row scrollbar-hide">
+                            ${collectionMovies.map(m => `<div class="movie-card rounded-lg overflow-hidden shadow-lg w-40 sm:w-48 flex-shrink-0"><img src="${m.poster_path ? `${TMDB_IMAGE_BASE_URL}${m.poster_path}` : 'https://placehold.co/300x450?text=Poster+Not+Found'}" alt="${m.title}" class="w-full h-60 sm:h-72 object-cover rounded-lg"></div>`).join('')}
+                        </div>
+                        <button class="scroll-arrow scroll-left" onclick="scrollContent('collectionGrid', -300)">❮</button>
+                        <button class="scroll-arrow scroll-right" onclick="scrollContent('collectionGrid', 300)">❯</button>
+                    </div>
+                </div>
+            ` : '';
+            modalContent.innerHTML = `
+                <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
+                    <div class="flex-shrink-0">
+                        <img src="${tmdbDetails.poster_path ? `${TMDB_IMAGE_BASE_URL}${tmdbDetails.poster_path}` : 'https://placehold.co/300x450?text=Poster+Not+Found'}" alt="${title}" class="w-full md:w-64 rounded-lg shadow-lg">
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex flex-col space-y-2">
+                            <h2 class="text-3xl font-extrabold text-blue-400">${title}</h2>
+                            <p><strong>Original Language:</strong> ${originalLanguage}</p>
+                            <p><strong>IMDb Rating:</strong> <span class="text-yellow-400">★</span> ${imdbRating}/10</p>
+                            <p><strong>Genre:</strong> ${genresNames}</p>
+                            <p><strong>Plot:</strong> ${plot}</p>
+                            <p><strong>Runtime:</strong> ${runtime}</p>
+                            <p><strong>Awards:</strong> ${awards}</p>
+                            ${externalLinksHtml ? `<div class="mt-2">${externalLinksHtml}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+                ${collectionHtml}
+                <div class="mt-8">
+                    <h3 class="text-2xl font-bold text-white mb-4">Videos</h3>
+                    <div class="relative">
+                        <div id="videoGrid" class="movie-row scrollbar-hide">
+                            ${videosList || '<p class="text-center w-full">No videos available.</p>'}
+                        </div>
+                        <button class="scroll-arrow scroll-left" onclick="scrollContent('videoGrid', -300)">❮</button>
+                        <button class="scroll-arrow scroll-right" onclick="scrollContent('videoGrid', 300)">❯</button>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-2xl font-bold text-white mb-4">Photos</h3>
+                    <div class="relative">
+                        <div id="photoGrid" class="movie-row scrollbar-hide">
+                            ${photosList || '<p class="text-center w-full">No photos available.</p>'}
+                        </div>
+                        <button class="scroll-arrow scroll-left" onclick="scrollContent('photoGrid', -300)">❮</button>
+                        <button class="scroll-arrow scroll-right" onclick="scrollContent('photoGrid', 300)">❯</button>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-2xl font-bold text-white mb-4">Cast & Crew</h3>
+                    <div class="relative">
+                        <div id="castGrid" class="movie-row scrollbar-hide">
+                            ${castList || '<p class="text-center w-full">No cast information available.</p>'}
+                        </div>
+                        <button class="scroll-arrow scroll-left" onclick="scrollContent('castGrid', -300)">❮</button>
+                        <button class="scroll-arrow scroll-right" onclick="scrollContent('castGrid', 300)">❯</button>
+                    </div>
+                    <div class="mt-4">
+                        <h4 class="text-xl font-semibold">Director:</h4>
+                        <p>${getDirector(credits?.crew || [])}</p>
+                    </div>
+                </div>
+            `;
+            showModal(movieModal);
+        };
+
+        // Creates checkboxes for genres and languages in the recommendation modal
+        const createCheckboxes = (containerId, dataArray, name, valueKey, labelKey) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            dataArray.forEach(item => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center space-x-2';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = name;
+                input.value = item[valueKey];
+                input.className = 'rounded text-blue-600 focus:ring-blue-500';
+                const span = document.createElement('span');
+                span.textContent = item[labelKey];
+                label.appendChild(input);
+                label.appendChild(span);
+                container.appendChild(label);
+            });
+        };
+
+        // Sets up the language sections on the home page
+        const setupLanguageSection = () => {
+            const container = document.getElementById('languagesContainer');
+            container.innerHTML = '';
+            languages.forEach(lang => {
+                const card = document.createElement('div');
+                card.className = 'relative genre-card rounded-lg overflow-hidden shadow-lg transform hover:scale-105 transition-all duration-300 w-36 sm:w-48 flex-shrink-0';
+                card.innerHTML = `
+                    <img src="${lang.poster}" alt="${lang.name}" class="w-full h-56 object-cover rounded-lg">
+                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-center py-2">
+                        <span class="text-white font-bold text-lg">${lang.name}</span>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    document.querySelector('#searchResultsSection h2').textContent = `Movies by Language: ${lang.name}`;
+                    hideAllSections();
+                    searchResultsSection.classList.remove('hidden');
+                    displayedMediaIds.clear();
+                    // Updated call
+                    setupVerticalInfiniteScroll('searchResultsGrid', 'discover/movie', {
+                        with_original_language: lang.code,
+                        sort_by: 'vote_average.desc'
+                    });
+                });
+                container.appendChild(card);
+            });
+        };
+
+        // Sets up the genre sections on the home page
+        const setupGenreSection = async () => {
+            const container = document.getElementById('genresContainer');
+            container.innerHTML = '';
+            // TMDB Genre list call is not strictly needed since you have genresWithPosters, 
+            // but for completeness, if you want a full list:
+            const fetchedGenres = await fetchData('genre/movie/list');
+            let genres = [];
+            if (fetchedGenres) genres = fetchedGenres.genres;
+            
+            genresWithPosters.forEach(genre => {
+                const card = document.createElement('div');
+                card.className = 'relative genre-card rounded-lg overflow-hidden shadow-lg transform hover:scale-105 transition-all duration-300 w-36 sm:w-48 flex-shrink-0';
+                card.innerHTML = `
+                    <img src="${genre.poster}" alt="${genre.name}" class="w-full h-56 object-cover rounded-lg">
+                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-center py-2">
+                        <span class="text-white font-bold text-lg">${genre.name}</span>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    document.querySelector('#searchResultsSection h2').textContent = `Movies by Genre: ${genre.name}`;
+                    hideAllSections();
+                    searchResultsSection.classList.remove('hidden');
+                    displayedMediaIds.clear();
+                    // Updated call
+                    setupVerticalInfiniteScroll('searchResultsGrid', 'discover/movie', {
+                        with_genres: genre.id,
+                        sort_by: 'vote_average.desc'
+                    });
+                });
+                container.appendChild(card);
+            });
+        };
+
+        // Combines two fetches into one vertical infinite scroll
+        // Updated to use the new fetchData format
+        const setupCombinedVerticalScroll = (containerId, path1, path2, commonParams = {}) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            let page = 1;
+            let isLoading = false;
+            let hasMore1 = true;
+            let hasMore2 = true;
+            let observer;
+
+            const fetchAndDisplay = async () => {
+                if (isLoading || (!hasMore1 && !hasMore2)) return;
+                isLoading = true;
+                
+                const params = { ...commonParams, page: page, include_adult: 'false' };
+
+                const [data1, data2] = await Promise.all([
+                    hasMore1 ? fetchData(path1, params) : null,
+                    hasMore2 ? fetchData(path2, params) : null
+                ]);
+
+                if (data1 && data1.results && data1.results.length > 0) {
+                    data1.results.filter(media => filterMedia(media, 'movie')).forEach(media => {
+                        addMediaCard(media, container, false);
+                    });
+                } else {
+                    hasMore1 = false;
+                }
+
+                if (data2 && data2.results && data2.results.length > 0) {
+                    data2.results.filter(media => filterMedia(media, 'tv')).forEach(media => {
+                        addMediaCard(media, container, true);
+                    });
+                } else {
+                    hasMore2 = false;
+                }
+
+                if (!hasMore1 && !hasMore2) {
+                    if (observer) observer.disconnect();
+                } else {
+                    page++;
+                }
+                isLoading = false;
+            };
+
+            const sentinel = document.createElement('div');
+            sentinel.className = 'w-full h-1';
+            container.appendChild(sentinel);
+            observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    fetchAndDisplay();
+                }
+            });
+            observer.observe(sentinel);
+            fetchAndDisplay();
+        };
+        
+        // Event listener for the search input
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim();
+            if (query.length > 2) {
+                document.querySelector('#searchResultsSection h2').textContent = `Search Results for "${query}"`;
+                hideAllSections();
+                searchResultsSection.classList.remove('hidden');
+                displayedMediaIds.clear();
+                // Updated call
+                setupVerticalInfiniteScroll('searchResultsGrid', 'search/multi', {
+                    query: encodeURIComponent(query)
+                });
+            } else if (query.length === 0) {
+                showHomePage();
+            }
+        });
+        
+        // Navigation link event listeners
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showHomePage();
+        });
+        moviesLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('#searchResultsSection h2').textContent = "All Movies";
+            hideAllSections();
+            searchResultsSection.classList.remove('hidden');
+            displayedMediaIds.clear();
+            // Updated call
+            setupVerticalInfiniteScroll('searchResultsGrid', 'discover/movie', { 
+                sort_by: 'popularity.desc'
+            });
+        });
+        showsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('#searchResultsSection h2').textContent = "All TV Shows";
+            hideAllSections();
+            searchResultsSection.classList.remove('hidden');
+            displayedMediaIds.clear();
+            // Updated call
+            setupVerticalInfiniteScroll('searchResultsGrid', 'discover/tv', { 
+                sort_by: 'popularity.desc', 
+                'vote_count.gte': 0 
+            }, true);
+        });
+        animationLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('#searchResultsSection h2').textContent = "Animation";
+            hideAllSections();
+            searchResultsSection.classList.remove('hidden');
+            displayedMediaIds.clear();
+            // Updated call
+            setupCombinedVerticalScroll('searchResultsGrid', 
+                'discover/movie',
+                'discover/tv',
+                { with_genres: '16', sort_by: 'popularity.desc' }
+            );
+        });
+        kidsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('#searchResultsSection h2').textContent = "Kids Movies & Shows";
+            hideAllSections();
+            searchResultsSection.classList.remove('hidden');
+            displayedMediaIds.clear();
+            // Updated call
+            setupCombinedVerticalScroll('searchResultsGrid',
+                'discover/movie',
+                'discover/tv',
+                { with_genres: '10751,16', sort_by: 'popularity.desc' }
+            );
+        });
+
+        // Recommendation Modal Event Listeners
+        recommendationBtn.addEventListener('click', async () => {
+            createCheckboxes('genreCheckboxes', genresWithPosters, 'genre', 'id', 'name');
+            createCheckboxes('languageCheckboxes', languages, 'language', 'code', 'name');
+            showModal(recommendationModal);
+        });
+        generateRecommendationBtn.addEventListener('click', async () => {
+            const selectedGenres = Array.from(document.querySelectorAll('#genreCheckboxes input[name="genre"]:checked')).map(el => el.value);
+            const selectedLanguages = Array.from(document.querySelectorAll('#languageCheckboxes input[name="language"]:checked')).map(el => el.value);
+            const selectedStudios = Array.from(document.querySelectorAll('#studioCheckboxes input[name="studio"]:checked')).map(el => el.value);
+            const selectedContentType = Array.from(document.querySelectorAll('#contentTypeCheckboxes input[name="contentType"]:checked')).map(el => el.value);
+            const minRating = parseFloat(document.getElementById('ratingSlider').value);
+            const releaseYear = document.getElementById('releaseYear').value;
+            const minRuntime = document.getElementById('minRuntime').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            hideModal(recommendationModal);
+            showLoading();
+            hideAllSections();
+            searchResultsSection.classList.remove('hidden');
+            searchResultsGrid.innerHTML = '';
+            displayedMediaIds.clear();
+
+            const commonParams = {
+                sort_by: sortBy,
+                'vote_average.gte': minRating,
+                'vote_count.gte': 0
+            };
+            if (releaseYear) commonParams['primary_release_year'] = releaseYear;
+            if (minRuntime) commonParams['with_runtime.gte'] = minRuntime;
+            if (selectedLanguages.length > 0) commonParams['with_original_language'] = selectedLanguages.join('|');
+            if (selectedStudios.length > 0) commonParams['with_companies'] = selectedStudios.join(',');
+            
+            const mediaTypes = [];
+            if (selectedContentType.includes('movie')) mediaTypes.push('movie');
+            if (selectedContentType.includes('tv')) mediaTypes.push('tv');
+            if (selectedContentType.includes('animation')) mediaTypes.push('animation');
+            if (selectedContentType.includes('kids')) mediaTypes.push('kids');
+            
+            document.querySelector('#searchResultsSection h2').textContent = "Recommendations";
+            
+            if (mediaTypes.length > 0) {
+                const hasMovies = mediaTypes.includes('movie') || mediaTypes.includes('animation') || mediaTypes.includes('kids');
+                const hasTv = mediaTypes.includes('tv');
+                
+                const movieParams = { ...commonParams };
+                const genresForMovies = [];
+                if (mediaTypes.includes('animation')) genresForMovies.push(16);
+                if (mediaTypes.includes('kids')) genresForMovies.push(10751);
+                
+                if (selectedGenres.length > 0) {
+                    movieParams['with_genres'] = selectedGenres.concat(genresForMovies).join(',');
+                } else if (genresForMovies.length > 0) {
+                    movieParams['with_genres'] = genresForMovies.join(',');
+                }
+                
+                const tvParams = { ...commonParams };
+                const genresForTv = [];
+                if (mediaTypes.includes('animation')) genresForTv.push(16);
+                if (mediaTypes.includes('kids')) genresForTv.push(10751);
+                
+                if (selectedGenres.length > 0) {
+                    tvParams['with_genres'] = selectedGenres.concat(genresForTv).join(',');
+                } else if (genresForTv.length > 0) {
+                    tvParams['with_genres'] = genresForTv.join(',');
+                }
+
+                searchResultsGrid.innerHTML = '';
+                if (hasMovies && hasTv) {
+                    // Pass paths and common parameters
+                    setupCombinedVerticalScroll(
+                        'searchResultsGrid',
+                        'discover/movie',
+                        'discover/tv',
+                        { ...movieParams, ...tvParams } // Combine parameters for general discovery
+                    );
+                } else if (hasMovies) {
+                    // Pass path and movie-specific parameters
+                    setupVerticalInfiniteScroll('searchResultsGrid', 'discover/movie', movieParams, false);
+                } else if (hasTv) {
+                    // Pass path and TV-specific parameters
+                    setupVerticalInfiniteScroll('searchResultsGrid', 'discover/tv', tvParams, true);
+                } else {
+                    searchResultsGrid.innerHTML = `<p class="text-center w-full">Please select at least one content type to generate recommendations.</p>`;
+                }
+            } else {
+                searchResultsGrid.innerHTML = `<p class="text-center w-full">Please select at least one content type to generate recommendations.</p>`;
+            }
+            
+            hideLoading();
+        });
+        
+        closeModalBtn.addEventListener('click', () => hideModal(movieModal));
+        closeRecommendationModalBtn.addEventListener('click', () => hideModal(recommendationModal));
+        ratingSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            ratingValue.textContent = value;
+            ratingFill.style.width = `${(value / 10) * 100}%`;
+        });
+        
+        // Function to initialize all sections on page load
+        const initialize = () => {
+            setupBackgroundCarousel();
+            displayedMediaIds.clear();
+            
+            // All API calls updated to use the new secure format: setupInfiniteScroll(containerId, path, params, isTV)
+            
+            // On Air Movies
+            setupInfiniteScroll('onAirMoviesGrid', 'movie/now_playing', { language: 'en-US' });
+            
+            // On Air Shows
+            setupInfiniteScroll('onAirShowsGrid', 'tv/on_the_air', { language: 'en-US' }, true);
+            
+            // Popular Movies
+            setupInfiniteScroll('popularMoviesGrid', 'movie/popular', { language: 'en-US' });
+            
+            // Popular Series
+            setupInfiniteScroll('popularSeriesGrid', 'tv/popular', { language: 'en-US' }, true);
+            
+            // High Rated Movies
+            setupInfiniteScroll('highRatedMoviesGrid', 'movie/top_rated', { language: 'en-US' });
+            
+            // High Rated Series
+            setupInfiniteScroll('highRatedSeriesGrid', 'tv/top_rated', { language: 'en-US' }, true);
+            
+            // Marvel Movies
+            setupInfiniteScroll('marvelMoviesGrid', 'discover/movie', { with_companies: 420, sort_by: 'popularity.desc' });
+            
+            // Marvel Series
+            setupInfiniteScroll('marvelSeriesGrid', 'discover/tv', { with_companies: 420, sort_by: 'popularity.desc' }, true);
+            
+            // DC Movies
+            setupInfiniteScroll('dcMoviesGrid', 'discover/movie', { with_companies: 429, sort_by: 'popularity.desc' });
+            
+            // DC Series
+            setupInfiniteScroll('dcSeriesGrid', 'discover/tv', { with_companies: 429, sort_by: 'popularity.desc' }, true);
+            
+            // Japanese Movies
+            setupInfiniteScroll('japaneseMoviesGrid', 'discover/movie', { with_original_language: 'ja', sort_by: 'popularity.desc' });
+            
+            // Japanese Series
+            setupInfiniteScroll('japaneseSeriesGrid', 'discover/tv', { with_original_language: 'ja', sort_by: 'popularity.desc' }, true);
+            
+            // Korean Movies
+            setupInfiniteScroll('koreanMoviesGrid', 'discover/movie', { with_original_language: 'ko', sort_by: 'popularity.desc' });
+            
+            // Korean Dramas
+            setupInfiniteScroll('koreanDramasGrid', 'discover/tv', { with_original_language: 'ko', sort_by: 'popularity.desc' }, true);
+            
+            // Kids Movies
+            setupInfiniteScroll('kidsMoviesGrid', 'discover/movie', { with_genres: '10751,16', sort_by: 'popularity.desc' });
+            
+            // Kids Shows
+            setupInfiniteScroll('kidsShowsGrid', 'discover/tv', { with_genres: '10751,16', sort_by: 'popularity.desc' }, true);
+            
+            // Popular Languages: Setting up sections for popular languages
+            setupLanguageSection();
+            
+            // Popular Genres: Setting up sections for popular genres
+            setupGenreSection();
+            
+            // Hindi Movies
+            setupInfiniteScroll('hindiMoviesGrid', 'discover/movie', { with_original_language: 'hi', sort_by: 'popularity.desc' });
+            
+            // Hindi Shows
+            setupInfiniteScroll('hindiShowsGrid', 'discover/tv', { with_original_language: 'hi', sort_by: 'popularity.desc' }, true);
+            
+            // Telugu Movies
+            setupInfiniteScroll('teluguMoviesGrid', 'discover/movie', { with_original_language: 'te', sort_by: 'popularity.desc' });
+            
+            // Telugu Shows
+            setupInfiniteScroll('teluguShowsGrid', 'discover/tv', { with_original_language: 'te', sort_by: 'popularity.desc' }, true);
+            
+            // Tamil Movies
+            setupInfiniteScroll('tamilMoviesGrid', 'discover/movie', { with_original_language: 'ta', sort_by: 'popularity.desc' });
+            
+            // Tamil Shows
+            setupInfiniteScroll('tamilShowsGrid', 'discover/tv', { with_original_language: 'ta', sort_by: 'popularity.desc' }, true);
+            
+            // Malayalam Movies
+            setupInfiniteScroll('malayalamMoviesGrid', 'discover/movie', { with_original_language: 'ml', sort_by: 'popularity.desc' });
+            
+            // Malayalam Shows
+            setupInfiniteScroll('malayalamShowsGrid', 'discover/tv', { with_original_language: 'ml', sort_by: 'popularity.desc' }, true);
+        };
+        
+        // Initialize the app when the window loads
+        window.onload = initialize;
+    </script>
+</body>
+</html>
