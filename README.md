@@ -24,6 +24,8 @@ Cineverse is a modern, responsive web application designed for comprehensive mov
 -   **Development Tools:**
     -   **Visual Studio Code:** The code editor used for development.
     -   **Git:** Version control system for tracking changes.
+
+---
  
 ### API Key Source
 
